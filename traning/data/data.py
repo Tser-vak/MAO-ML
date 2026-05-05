@@ -201,13 +201,13 @@ class DataConv:
         return scaler[scaler_type]
 
     @staticmethod
-    def apply_borderline_smote(X,y,sampling_method='borderline_smote',random_state=142):
-        """Applies BorderlineSMOTE strictly to the training data."""
-        print("Applying BorderlineSMOTE to training data...")
-        smote = BorderlineSMOTE(random_state=random_state)
-        X_resampled, y_resampled = smote.fit_resample(X, y)
-        print(f"New training feature shape after SMOTE: {X_resampled.shape}")
-        return X_resampled, y_resampled
+    def get_smote(random_state=42):
+        """
+        Returns the callable Borderline SMOTE object.
+        DO NOT call .fit_resample() here! The ImbPipeline in train.py 
+        must do that internally to prevent data leakage.
+        """
+        return BorderlineSMOTE(random_state=random_state)
 
 
 if __name__ == "__main__":

@@ -29,6 +29,19 @@ def main():
     # Split Data
     (X_train, X_test, y_train, y_test) = cleaner.get_split()
     
+    #initialize scaer,smote
+    scaler = DataConv.Scaler('standard')
+    smote = DataConv.get_smote()
+
+    rfe_smote = FearuteSelector(number_features=40,use_balanced_weights=False)
+    rfe_no_smote = FearuteSelector(number_features=40,use_balanced_weights=True)
+
+    cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    models = ModelFactory.get_classifier()
+    spaces = ModelFactory.get_hyperopt_spaces()
+
+    globla_best_f1 = 0.0
+    global_config = {}
 
 
 if __name__ == "__main__" : 
