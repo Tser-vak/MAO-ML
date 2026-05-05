@@ -8,7 +8,7 @@ from hyperopt import fmin, tpe, hp, Trials, STATUS_OK
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.metrics import (
-    f1_score, roc_auc_score, balanced_accuracy_score, 
+    matthews_corrcoef, roc_auc_score, balanced_accuracy_score, 
     precision_score, recall_score, log_loss, confusion_matrix
 )
 
@@ -29,19 +29,29 @@ def main():
     # Split Data
     (X_train, X_test, y_train, y_test) = cleaner.get_split()
     
-    #initialize scaer,smote
+    # Initialize scaler and smote
     scaler = DataConv.Scaler('standard')
     smote = DataConv.get_smote()
-
+    
+    # Initialize feature selection (RFE)
     rfe_smote = FearuteSelector(number_features=40,use_balanced_weights=False)
     rfe_no_smote = FearuteSelector(number_features=40,use_balanced_weights=True)
 
+    # Initialize Cross Validation
     cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    
+    # Initialize Models and Hyper-parameter tuning spaces
     models = ModelFactory.get_classifier()
     spaces = ModelFactory.get_hyperopt_spaces()
 
-    globla_best_f1 = 0.0
+    # Start instance of mlflow
+    mlflow.set_experiment('MAO_ML_Results')
+
+    # Set parameters for tracking
+    global_best_mcc = -1.0
     global_config = {}
+
+    # Phase 2 : 
 
 
 if __name__ == "__main__" : 
