@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import json 
-import imblearn.over_sampling as BorderlineSMOTE
+from imblearn.over_sampling import BorderlineSMOTE
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
 from sklearn.pipeline import Pipeline as SklearnPipeline
@@ -205,13 +205,13 @@ class DataConv:
         return scaler[scaler_type]
 
     @staticmethod
-    def get_smote(random_state=42):
+    def get_smote():
         """
         Returns the callable Borderline SMOTE object.
         DO NOT call .fit_resample() here! The ImbPipeline in train.py 
         must do that internally to prevent data leakage.
         """
-        return BorderlineSMOTE(random_state=random_state)
+        return BorderlineSMOTE(random_state=67)
 
 class ModelExporter:
     """Handles the preparation and export of models for production."""

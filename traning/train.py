@@ -11,6 +11,8 @@ from sklearn.metrics import (
     matthews_corrcoef, roc_auc_score, balanced_accuracy_score, 
     precision_score, recall_score, confusion_matrix
 )
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Load OPP functions
 from data.data import DataProcessor, DataConv, ModelExporter # Data handeling processes
@@ -76,7 +78,7 @@ def main():
                 elif model_name == 'XGBoost':
                     # XGBoost has no built-in class_weight parameter, so we use scale_pos_weight.
                     # The formula is (number of negative samples) / (number of positive samples)
-                    count = y_train.value_counts()
+                    count = pd.Series(y_train).value_counts()
                     weights = count.min() / count.max()
                     base_model.set_params(scale_pos_weight= weights)
             else:
@@ -86,6 +88,9 @@ def main():
                     base_model.set_params(scale_pos_weight=None)
 
             def objective(params):
+                # Format parameters so n_estimators, max_depth, etc are integers
+                params = format_params(params)
+                
                 # Create pipeline
                 if use_smote:
                     pipeline = ImbPipeline([('scaler', scaler) , ('smote',smote ) , ('rfe',rfe_smote.get_object_rfe()) , ('classifier',base_model)])
@@ -101,7 +106,7 @@ def main():
                 # Calculate Cross-validation Scores
                 cv_results = cross_validate(
                     estimator=pipeline, X=X_train, y=y_train,
-                    cv=cv_strategy, scoring=score,n_jobs=-1,
+                    cv=cv_strategy, scoring=score, n_jobs=1,
                     return_train_score=True)
                 
                 # Mean values 
@@ -123,7 +128,7 @@ def main():
                         'Mean_recall_test_cv': rec_mean
                     })
 
-                return {'loss':-mcc_mean, 'status': STATUS_OK}
+                return {'loss': round(-mcc_mean, 3), 'status': STATUS_OK}
             
             with mlflow.start_run(run_name = run_name):
                 # Initialize hyper-parameter tuning
