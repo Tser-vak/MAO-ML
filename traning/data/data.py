@@ -1,8 +1,12 @@
 import pandas as pd
-import numpy as np 
-import imblearn.over_sampling as BorderlineSMOTE
+import numpy as np
+import json 
+from imblearn.over_sampling import BorderlineSMOTE
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+from sklearn.pipeline import Pipeline as SklearnPipeline
+from skl2onnx import convert_sklearn
+from skl2onnx.common.data_types import FloatTensorType
 
 
 class DataProcessor:
@@ -201,13 +205,64 @@ class DataConv:
         return scaler[scaler_type]
 
     @staticmethod
-    def apply_borderline_smote(X,y,sampling_method='borderline_smote',random_state=142):
-        """Applies BorderlineSMOTE strictly to the training data."""
-        print("Applying BorderlineSMOTE to training data...")
-        smote = BorderlineSMOTE(random_state=random_state)
-        X_resampled, y_resampled = smote.fit_resample(X, y)
-        print(f"New training feature shape after SMOTE: {X_resampled.shape}")
-        return X_resampled, y_resampled
+    def get_smote():
+        """
+        Returns the callable Borderline SMOTE object.
+        DO NOT call .fit_resample() here! The ImbPipeline in train.py 
+        must do that internally to prevent data leakage.
+        """
+        return BorderlineSMOTE(random_state=67)
+
+class ModelExporter:
+    """Handles the preparation and export of models for production."""
+
+    @staticmethod
+    def _slice_scaler(fitted_scaler, support_mask, num_features):
+        """Slices a fitted StandardScaler to keep only selected features."""
+        sliced_scaler = StandardScaler()
+        sliced_scaler.mean_ = fitted_scaler.mean_[support_mask]
+        sliced_scaler.scale_ = fitted_scaler.scale_[support_mask]
+        sliced_scaler.var_ = fitted_scaler.var_[support_mask]
+        sliced_scaler.n_features_in_ = num_features
+        
+        if hasattr(fitted_scaler, 'feature_names_in_'):
+            sliced_scaler.feature_names_in_ = fitted_scaler.feature_names_in_[support_mask]
+            
+        return sliced_scaler
+
+    @classmethod
+    def export_production_pipeline(cls, final_pipeline, support_mask, selected_features, model_name):
+        """
+        Extracts components from a training pipeline, handles dimension mismatches, 
+        and exports a clean inference-only ONNX model and feature manifest.
+        """
+        # 1. Save feature manifest for the backend team
+        feature_json_path = f"Production_Features_{model_name}.json" 
+        with open(feature_json_path, "w") as f: 
+            json.dump(selected_features, f) 
+        print(f"Saved required feature names to: {feature_json_path}") 
+
+        # 2. Extract and slice the scaler
+        fitted_scaler = final_pipeline.named_steps['scaler'] 
+        sliced_scaler = cls._slice_scaler(fitted_scaler, support_mask, len(selected_features))
+
+        # 3. Build a clean inference pipeline
+        fitted_classifier = final_pipeline.named_steps['classifier'] 
+        inference_pipeline = SklearnPipeline([ 
+            ('scaler', sliced_scaler), 
+            ('classifier', fitted_classifier) 
+        ]) 
+
+        # 4. Convert to ONNX
+        initial_type = [('float_input', FloatTensorType([None, len(selected_features)]))] 
+        onnx_model = convert_sklearn(inference_pipeline, initial_types=initial_type, target_opset=12) 
+
+        # 5. Save to disk
+        onnx_filename = f"Production_{model_name}.onnx" 
+        with open(onnx_filename, "wb") as f: 
+            f.write(onnx_model.SerializeToString()) 
+         
+        print(f"Architecture complete. Saved ONNX model securely: {onnx_filename}")
 
 
 if __name__ == "__main__":

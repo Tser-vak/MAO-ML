@@ -1,2 +1,5 @@
 #Env
 /.venv
+__pycache__
+mlflow.db
+commands.txt
