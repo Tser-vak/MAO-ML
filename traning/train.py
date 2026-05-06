@@ -18,7 +18,16 @@ from classifiers.clf import ModelFactory # Budle of Classifier and hyper-paramet
 from descriptors_handeling.feature_hand import FearuteSelector  # Feature selection (RFE) object
 from visualization.visual import ModelVisualizer # Budle of Visualizations tools
 
+def format_params(params):
+    """Casts hyperopt float parameters to integers where needed."""
+    formatted = params.copy()
+    for key in formatted.keys():
+        if any(kw in key for kw in ['depth', 'estimators', 'leaves', 'samples']):
+            formatted[key] = int(formatted[key])
+    return formatted
+
 def main():
+
     print('Phase 1 Laoding and Cleaning Data\n')
     file = r'C:\Users\Max\Desktop\MAO-ML\traning\data\MAOB_PD_Activity_with_descriptors.csv'
     cleaner = DataProcessor(file_path=file,ignore_desc = ["Molecule ChEMBL ID","Smiles","Standard Type","Standard Relation","Standard Value","Standard Units","Label"],
@@ -52,6 +61,110 @@ def main():
     global_config = {}
 
     # Phase 2 : 
+
+    print('Phase 2 : Hyperparameter Tunning\n')
+    for model_name , base_model in models.items():
+        for use_smote in [True,False]:
+            path_name = 'SMOTE' if use_smote else 'No_SMOTE'
+            run_name = f"{model_name}_{path_name}"
+            print(f"Optimizing {run_name}...")
+
+            if not use_smote:
+                if model_name in ['RandomForest','LightGBM']:
+                    base_model.set_params(class_weight='balanced')
+
+                elif model_name == 'XGBoost':
+                    # XGBoost has no built-in class_weight parameter, so we use scale_pos_weight.
+                    # The formula is (number of negative samples) / (number of positive samples)
+                    count = y_train.value_counts()
+                    weights = count.min() / count.max()
+                    base_model.set_params(scale_pos_weight= weights)
+            else:
+                if model_name in ['RandomForest','LightGBM']:
+                    base_model.set_params(class_weight=None)
+                elif model_name == 'XGBoost':
+                    base_model.set_params(scale_pos_weight=None)
+
+            def objective(params):
+                # Create pipeline
+                if use_smote:
+                    pipeline = ImbPipeline([('scaler', scaler) , ('smote',smote ) , ('classifier',base_model) , ('rfe',rfe_smote)])
+                else:
+                    pipeline = SklearnPipeline([('scaler', scaler),('classifier',base_model),('rfe',rfe_no_smote)])  
+                
+                #Set parameters
+                pipeline.set_params(**params)
+                
+                # Cross validation list 
+                score = ['matthews_corrcoef','roc_auc','balanced_accuracy','precision','recall']
+                
+                # Calculate Cross-validation Scores
+                cv_results = cross_validate(
+                    estimator=pipeline, X=X_train, y=y_train,
+                    cv=cv_strategy, scoring=score,n_jobs=-1,
+                    return_train_score=True)
+                
+                # Mean values 
+                mcc_mean = np.mean(cv_results['test_matthews_corrcoef'])
+                mcc_mean_train = np.mean(cv_results['train_matthews_corrcoef'])
+                roc_mean = np.mean(cv_results['test_roc_auc'])
+                ba_mean = np.mean(cv_results['test_balanced_accuracy'])
+                prec_mean = np.mean(cv_results['test_precision'])
+                rec_mean = np.mean(cv_results['test_recall'])
+
+                with mlflow.start_run(nested=True):
+                    mlflow.log_params(params)
+                    mlflow.log_metrics({
+                        'Mean_mcc_test_cv': mcc_mean,
+                        'Mean_mcc_train_cv': mcc_mean_train,
+                        'Mean_roc_auc_test_cv': roc_mean,
+                        'Mean_balanced_accuracy_test_cv': ba_mean,
+                        'Mean_precision_test_cv': prec_mean,
+                        'Mean_recall_test_cv': rec_mean
+                    })
+
+                return {'loss':-mcc_mean, 'status': STATUS_OK}
+            
+            with mlflow.start_run(run_name = run_name):
+                # Initialize hyper-parameter tuning
+                trials = Trials()
+                raw_best_param = fmin(
+                    fn=objective,
+                    space=spaces[model_name],
+                    algo=tpe.suggest,
+                    max_evals=15,
+                    trials=trials,
+                    rstate=np.random.default_rng(67)
+                )
+
+                best_params = format_params({ f'classifier__{k.split('_',1)[1]}': v for k,v in raw_best_param.items()})
+
+                best_mcc_this_run = -trials.best_trial['result']['loss']
+                mlflow.log_params(best_params)
+                mlflow.log_metric("best_cv_mcc", best_mcc_this_run)
+                print(f"Best CV MCC for {run_name}: {best_mcc_this_run:.4f}")
+
+                if best_mcc_this_run > global_best_mcc:
+                    global_best_mcc = best_mcc_this_run
+                    global_best_config = {
+                        'model_name': model_name,
+                        'base_model': base_model,
+                        'use_smote': use_smote,
+                        'params': best_params
+                    }
+    # Phase 3: Final Evaluation of model and visualization
+    print(f"\n Phase 3: GLOBAL WINNER -> {global_best_config['model_name']} ({'SMOTE' if global_best_config['use_smote'] else 'No-SMOTE'})")  
+    print("Training final model on full 80% train set...")
+    
+
+
+                
+
+                
+
+            
+            
+
 
 
 if __name__ == "__main__" : 

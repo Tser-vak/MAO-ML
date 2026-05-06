@@ -9,9 +9,9 @@ class ModelFactory:
     def get_classifier():
         """Define the Classifier"""
         return {
-            'XGBoost': XGBClassifier(eval_metric='logloss',random_state=42,n_jobs=-1,verbose=-1),
-            'RandomForest': RandomForestClassifier(random_state=42,n_jobs=-1,verbose=-1),
-            'LightGBM': LGBMClassifier(random_state=42,n_jobs=-1,verbose=-1)
+            'XGBoost': XGBClassifier(eval_metric='logloss',random_state=67,n_jobs=-1,verbose=-1),
+            'RandomForest': RandomForestClassifier(random_state=67,n_jobs=-1,verbose=-1),
+            'LightGBM': LGBMClassifier(random_state=67,n_jobs=-1,verbose=-1)
         }
 
     @staticmethod
