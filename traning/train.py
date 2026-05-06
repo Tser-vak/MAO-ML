@@ -9,11 +9,11 @@ from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.metrics import (
     matthews_corrcoef, roc_auc_score, balanced_accuracy_score, 
-    precision_score, recall_score, log_loss, confusion_matrix
+    precision_score, recall_score, confusion_matrix
 )
 
 # Load OPP functions
-from data.data import DataProcessor,DataConv # Data handeling processes
+from data.data import DataProcessor, DataConv, ModelExporter # Data handeling processes
 from classifiers.clf import ModelFactory # Budle of Classifier and hyper-parameter tuning 
 from descriptors_handeling.feature_hand import FearuteSelector  # Feature selection (RFE) object
 from visualization.visual import ModelVisualizer # Budle of Visualizations tools
@@ -88,9 +88,9 @@ def main():
             def objective(params):
                 # Create pipeline
                 if use_smote:
-                    pipeline = ImbPipeline([('scaler', scaler) , ('smote',smote ) , ('classifier',base_model) , ('rfe',rfe_smote)])
+                    pipeline = ImbPipeline([('scaler', scaler) , ('smote',smote ) , ('rfe',rfe_smote.get_object_rfe()) , ('classifier',base_model)])
                 else:
-                    pipeline = SklearnPipeline([('scaler', scaler),('classifier',base_model),('rfe',rfe_no_smote)])  
+                    pipeline = SklearnPipeline([('scaler', scaler), ('rfe',rfe_no_smote.get_object_rfe()), ('classifier',base_model)])  
                 
                 #Set parameters
                 pipeline.set_params(**params)
@@ -152,20 +152,77 @@ def main():
                         'use_smote': use_smote,
                         'params': best_params
                     }
+    # ===================================================================== 
     # Phase 3: Final Evaluation of model and visualization
-    print(f"\n Phase 3: GLOBAL WINNER -> {global_best_config['model_name']} ({'SMOTE' if global_best_config['use_smote'] else 'No-SMOTE'})")  
+    # ===================================================================== 
+    print(f"\n🏆 Phase 3: GLOBAL WINNER -> {global_best_config['model_name']} ({'SMOTE' if global_best_config['use_smote'] else 'No-SMOTE'})")
     print("Training final model on full 80% train set...")
     
+    if global_best_config['use_smote']:
+        final_pipeline = ImbPipeline([('scaler', scaler), ('smote', smote), ('rfe', rfe_smote.get_object_rfe()), ('classifier', global_best_config['base_model'])])
+    else:
+        final_pipeline = SklearnPipeline([('scaler', scaler), ('rfe', rfe_no_smote.get_object_rfe()), ('classifier', global_best_config['base_model'])])
+        
+    final_pipeline.set_params(**global_best_config['params'])
+    final_pipeline.fit(X_train, y_train)
 
+    y_pred = final_pipeline.predict(X_test)
+    y_proba = final_pipeline.predict_proba(X_test)[:, 1]
+    
+    test_mcc = matthews_corrcoef(y_test, y_pred)
+    test_roc = roc_auc_score(y_test, y_proba)
+    test_bal_acc = balanced_accuracy_score(y_test, y_pred)
+    test_prec = precision_score(y_test, y_pred)
+    test_rec = recall_score(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
 
-                
+    mlflow.log_metrics({"holdout_mcc": test_mcc,
+                         "holdout_roc_auc": test_roc,
+                         "holdout_bal_acc": test_bal_acc,
+                         "holdout_precision": test_prec,
+                         "holdout_recall": test_rec
+                         })
 
-                
+    print("\n" + "="*45)
+    print("   FINAL HOLDOUT RESULTS ")
+    print("="*45)
+    print(f"MCC Score:         {test_mcc:.4f}  <-- MAIN METRIC")
+    print(f"ROC-AUC:           {test_roc:.4f}")
+    print(f"Balanced Accuracy: {test_bal_acc:.4f}")
+    print(f"Precision:         {test_prec:.4f}")
+    print(f"Recall:            {test_rec:.4f}")
+    print("-" * 45)
+    print("Confusion Matrix Breakdown:")
+    print(f"True Negatives  (Correct Inactives): {cm[0][0]}")
+    print(f"False Positives (Wasted Lab Time):   {cm[0][1]}")
+    print(f"False Negatives (Missed Actives):    {cm[1][0]}")
+    print(f"True Positives  (Correct Actives):   {cm[1][1]}")
+    print("="*45 + "\n")
 
-            
-            
+    print("Generating visual plots...")
+    visualizer = ModelVisualizer(global_best_config['model_name'], global_best_config['use_smote'])
+    visualizer.log_confusion_matrix(cm)
+    visualizer.log_roc_curve(y_test, y_proba)
 
-
+    # ===================================================================== 
+    # PHASE 4: ONNX EXPORT 
+    # ===================================================================== 
+    print("\nPhase 4: Exporting clean production ONNX model...") 
+    
+    # Grab the fitted RFE mask from the winning pipeline
+    fitted_rfe = final_pipeline.named_steps['rfe'] 
+    support_mask = fitted_rfe.support_
+    
+    # Map the mask back to the original training dataframe columns
+    selected_features = X_train.columns[support_mask].tolist() 
+    
+    # Let the Exporter handle the slicing and ONNX conversion
+    ModelExporter.export_production_pipeline(
+        final_pipeline=final_pipeline,
+        support_mask=support_mask,
+        selected_features=selected_features,
+        model_name=global_best_config['model_name']
+    )
 
 if __name__ == "__main__" : 
     main()
