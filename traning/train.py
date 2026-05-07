@@ -140,7 +140,7 @@ def main():
                     fn=objective,
                     space=spaces[model_name],
                     algo=tpe.suggest,
-                    max_evals=1,
+                    max_evals=35,
                     trials=trials,
                     rstate=np.random.default_rng(67)
                 )
