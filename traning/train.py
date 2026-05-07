@@ -119,6 +119,13 @@ def main():
                 prec_mean = np.mean(cv_results['test_precision'])
                 rec_mean = np.mean(cv_results['test_recall'])
 
+                # ===================================Penalize LOSS Calculation Due to script selecting Good  Mcc_test with ===================================
+                # =================================== Bad train Mcc (Overfitting) ===================================
+                alpha = 0.4 # penalty weight
+                mcc_gap = abs(mcc_mean - mcc_mean_train) # Gap between train and test MCC
+                penalty_loss = -mcc_mean + (alpha * mcc_gap) # Penalized Loss
+                # ============================================================================================================================================
+
                 with mlflow.start_run(run_name=f"Run {run_counter}", nested=True):
                     mlflow.log_params(params)
                     mlflow.log_metrics({
@@ -127,11 +134,12 @@ def main():
                         'Mean_roc_auc_test_cv': roc_mean,
                         'Mean_balanced_accuracy_test_cv': ba_mean,
                         'Mean_precision_test_cv': prec_mean,
-                        'Mean_recall_test_cv': rec_mean
+                        'Mean_recall_test_cv': rec_mean,
+                        'Custom_Penalized_Loss': penalty_loss
                     })
 
                 run_counter += 1
-                return {'loss': round(-mcc_mean, 3), 'status': STATUS_OK}
+                return {'loss': round(penalty_loss, 3), 'status': STATUS_OK}
             
             with mlflow.start_run(run_name = run_name):
                 # Initialize hyper-parameter tuning
