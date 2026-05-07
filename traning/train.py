@@ -45,8 +45,8 @@ def main():
     smote = DataConv.get_smote()
     
     # Initialize feature selection (RFE)
-    rfe_smote = FearuteSelector(number_features=40,use_balanced_weights=False)
-    rfe_no_smote = FearuteSelector(number_features=40,use_balanced_weights=True)
+    rfe_smote = FearuteSelector(number_features=25,use_balanced_weights=False)
+    rfe_no_smote = FearuteSelector(number_features=25,use_balanced_weights=True)
 
     # Initialize Cross Validation
     cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -87,13 +87,15 @@ def main():
                 elif model_name == 'XGBoost':
                     base_model.set_params(scale_pos_weight=None)
 
+            run_counter = 1
             def objective(params):
+                nonlocal run_counter
                 # Format parameters so n_estimators, max_depth, etc are integers
                 params = format_params(params)
                 
                 # Create pipeline
                 if use_smote:
-                    pipeline = ImbPipeline([('scaler', scaler) , ('smote',smote ) , ('rfe',rfe_smote.get_object_rfe()) , ('classifier',base_model)])
+                    pipeline = ImbPipeline([('scaler', scaler) , ('rfe',rfe_smote.get_object_rfe()) , ('smote',smote )  , ('classifier',base_model)])
                 else:
                     pipeline = SklearnPipeline([('scaler', scaler), ('rfe',rfe_no_smote.get_object_rfe()), ('classifier',base_model)])  
                 
@@ -117,7 +119,7 @@ def main():
                 prec_mean = np.mean(cv_results['test_precision'])
                 rec_mean = np.mean(cv_results['test_recall'])
 
-                with mlflow.start_run(nested=True):
+                with mlflow.start_run(run_name=f"Run {run_counter}", nested=True):
                     mlflow.log_params(params)
                     mlflow.log_metrics({
                         'Mean_mcc_test_cv': mcc_mean,
@@ -128,6 +130,7 @@ def main():
                         'Mean_recall_test_cv': rec_mean
                     })
 
+                run_counter += 1
                 return {'loss': round(-mcc_mean, 3), 'status': STATUS_OK}
             
             with mlflow.start_run(run_name = run_name):
@@ -137,7 +140,7 @@ def main():
                     fn=objective,
                     space=spaces[model_name],
                     algo=tpe.suggest,
-                    max_evals=15,
+                    max_evals=1,
                     trials=trials,
                     rstate=np.random.default_rng(67)
                 )

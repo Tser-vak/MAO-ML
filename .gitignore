@@ -3,3 +3,9 @@
 __pycache__
 mlflow.db
 commands.txt
+
+#Models
+models/
+
+#mlruns
+mlruns/

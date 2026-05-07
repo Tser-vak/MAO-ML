@@ -236,11 +236,14 @@ class ModelExporter:
         Extracts components from a training pipeline, handles dimension mismatches, 
         and exports a clean inference-only ONNX model and feature manifest.
         """
+        import os
+        os.makedirs("models", exist_ok=True)
+        
         # 1. Save feature manifest for the backend team
-        feature_json_path = f"Production_Features_{model_name}.json" 
+        feature_json_path = f"models/Production_Features_{model_name}.json" 
         with open(feature_json_path, "w") as f: 
             json.dump(selected_features, f) 
-        print(f"Saved required feature names to: {feature_json_path}") 
+        print(f"Saved required feature names to: {feature_json_path}")
 
         # 2. Extract and slice the scaler
         fitted_scaler = final_pipeline.named_steps['scaler'] 
@@ -254,11 +257,44 @@ class ModelExporter:
         ]) 
 
         # 4. Convert to ONNX
+        # Note: Scikit-learn models like RandomForestClassifier are natively supported by skl2onnx.
+        # External models like LightGBM and XGBoost need to be explicitly registered.
+        try:
+            from skl2onnx import update_registered_converter
+            from skl2onnx.common.shape_calculator import calculate_linear_classifier_output_shapes
+            
+            # Register LightGBM
+            try:
+                import lightgbm
+                from onnxmltools.convert.lightgbm.operator_converters.LightGbm import convert_lightgbm
+                update_registered_converter(
+                    lightgbm.LGBMClassifier, 'LightGbmLGBMClassifier',
+                    calculate_linear_classifier_output_shapes, convert_lightgbm,
+                    options={'nocl': [True, False], 'zipmap': [True, False, 'columns']}
+                )
+            except (ImportError, ValueError):
+                pass
+                
+            # Register XGBoost
+            try:
+                import xgboost
+                from onnxmltools.convert.xgboost.operator_converters.XGBoost import convert_xgboost
+                update_registered_converter(
+                    xgboost.XGBClassifier, 'XGBoostXGBClassifier',
+                    calculate_linear_classifier_output_shapes, convert_xgboost,
+                    options={'nocl': [True, False], 'zipmap': [True, False, 'columns']}
+                )
+            except (ImportError, ValueError):
+                pass
+                
+        except Exception:
+            pass
+
         initial_type = [('float_input', FloatTensorType([None, len(selected_features)]))] 
-        onnx_model = convert_sklearn(inference_pipeline, initial_types=initial_type, target_opset=12) 
+        onnx_model = convert_sklearn(inference_pipeline, initial_types=initial_type, target_opset={'': 12, 'ai.onnx.ml': 3})
 
         # 5. Save to disk
-        onnx_filename = f"Production_{model_name}.onnx" 
+        onnx_filename = f"models/Production_{model_name}.onnx" 
         with open(onnx_filename, "wb") as f: 
             f.write(onnx_model.SerializeToString()) 
          
