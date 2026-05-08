@@ -9,8 +9,8 @@ By prioritizing Precision, the model rapidly filters massive molecular libraries
 
 ## 🔬 The Science & Methodology
 
-### 1. Scaffold Hunting (The 100 $\mu$M Threshold)
-In this dataset, "Active" molecules are defined by an IC50 $\le$ 100,000 nM. While this indicates weak binding for a final drug, it is a deliberate choice for **scaffold hunting**. 
+### 1. Scaffold Hunting (The 100 nM Threshold)
+In this dataset, "Active" molecules are defined by an IC50 100,000 nM. While this indicates weak binding for a final drug, it is a deliberate choice for **scaffold hunting**. 
 The ML model casts a wide net to identify core structural geometries that successfully interact with the MAO-B pocket. These scaffolds can later be optimized by medicinal chemists 
 into nanomolar-range therapeutics.
 
