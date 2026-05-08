@@ -4,5 +4,8 @@ __pycache__
 mlflow.db
 commands.txt
 
+#model_test
+/testing_script
+
 #mlruns
 mlruns/
