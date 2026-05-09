@@ -148,7 +148,7 @@ def main():
                 # ==============================================================
                 weight_f05 = 0.6
                 weight_mcc = 0.4
-                alpha = 0.1
+                alpha = 0.25
 
                 master_score_test  = (f05_mean       * weight_f05) + (mcc_mean       * weight_mcc)
                 master_score_train = (f05_mean_train  * weight_f05) + (mcc_mean_train * weight_mcc)
@@ -182,7 +182,7 @@ def main():
                     fn=objective,
                     space=spaces[model_name],
                     algo=tpe.suggest,
-                    max_evals=35,
+                    max_evals=30,
                     trials=trials,
                     rstate=np.random.default_rng(67)
                 )

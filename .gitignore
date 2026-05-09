@@ -6,6 +6,8 @@ commands.txt
 
 #model_test
 /testing_script
+/models
+/runs
 
 #mlruns
 mlruns/
