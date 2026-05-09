@@ -70,6 +70,12 @@ class DataProcessor:
             self.data.drop(columns=[self.labels], inplace=True)
         else:
             raise ValueError("ERROR: The label column is missing")
+            
+        # Filter out all features with zero variance
+        zero_var_cols = self.data.columns[self.data.nunique() <= 1]
+        if len(zero_var_cols) > 0:
+            print(f"Dropping {len(zero_var_cols)} features with zero variance.")
+            self.data.drop(columns=zero_var_cols, inplace=True)
         
         return self.data, self.lb_data
 
