@@ -9,17 +9,10 @@ from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.metrics import (
     matthews_corrcoef, roc_auc_score, balanced_accuracy_score, 
-    precision_score, recall_score, confusion_matrix,fbeta_score,make_scorer
+    precision_score, recall_score, confusion_matrix
 )
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
-
-# ---------------------------------------------------------------------------
-# F0.5 scorer  (beta < 1  →  precision weighted higher than recall)
-# This directly penalises false positives, protecting lab resources.
-# ---------------------------------------------------------------------------
-f05_scorer = make_scorer(fbeta_score, beta=0.5, zero_division=0)
-
 
 # Load OPP functions
 from data.data import DataProcessor, DataConv, ModelExporter # Data handeling processes
@@ -108,54 +101,28 @@ def main():
                 
                 #Set parameters
                 pipeline.set_params(**params)
-                
+                 
                 # Cross validation list 
-                scoring = {
-                    'matthews_corrcoef': 'matthews_corrcoef',
-                    'roc_auc':           'roc_auc',
-                    'balanced_accuracy': 'balanced_accuracy',
-                    'precision':         'precision',
-                    'recall':            'recall',
-                    'f05':               f05_scorer,          
-                }
-
+                score = ['matthews_corrcoef','roc_auc','balanced_accuracy','precision','recall']
                 
                 # Calculate Cross-validation Scores
                 cv_results = cross_validate(
                     estimator=pipeline, X=X_train, y=y_train,
-                    cv=cv_strategy, scoring=scoring, n_jobs=1,
+                    cv=cv_strategy, scoring=score, n_jobs=1,
                     return_train_score=True)
                 
                 # Mean values 
                 mcc_mean = np.mean(cv_results['test_matthews_corrcoef'])
                 mcc_mean_train = np.mean(cv_results['train_matthews_corrcoef'])
-                f05_mean = np.mean(cv_results['test_f05'])
-                f05_mean_train = np.mean(cv_results['train_f05'])
                 roc_mean = np.mean(cv_results['test_roc_auc'])
                 ba_mean = np.mean(cv_results['test_balanced_accuracy'])
                 prec_mean = np.mean(cv_results['test_precision'])
                 rec_mean = np.mean(cv_results['test_recall'])
-
-                # ==============================================================
-                # HYBRID LOSS  (replaces the old MCC-only penalty)
-                #
-                #  master_score = 0.6 × F0.5  +  0.4 × MCC
-                #
-                #  • F0.5 (60%) → prioritises precision, guards lab budget
-                #  • MCC  (40%) → ensures overall discrimination stays honest
-                #  • alpha = 0.1 → light overfitting penalty so TPE isn't
-                #    paralysed by noisy train/test gaps on small datasets
-                # ==============================================================
-                weight_f05 = 0.6
-                weight_mcc = 0.4
-                alpha = 0.25
-
-                master_score_test  = (f05_mean       * weight_f05) + (mcc_mean       * weight_mcc)
-                master_score_train = (f05_mean_train  * weight_f05) + (mcc_mean_train * weight_mcc)
-
-                master_gap   = abs(master_score_test - master_score_train)
-                penalty_loss = -master_score_test + (alpha * master_gap)
-
+               # ===================================Penalize LOSS Calculation Due to script selecting Good  Mcc_test with ===================================
+                # =================================== Bad train Mcc (Overfitting) ===================================
+                alpha = 0.3 # penalty weight
+                mcc_gap = abs(mcc_mean - mcc_mean_train) # Gap between train and test MCC
+                penalty_loss = -mcc_mean + (alpha * mcc_gap) # Penalized Loss
                 # ============================================================================================================================================
 
                 with mlflow.start_run(run_name=f"Run {run_counter}", nested=True):
@@ -163,8 +130,6 @@ def main():
                     mlflow.log_metrics({
                         'Mean_mcc_test_cv': mcc_mean,
                         'Mean_mcc_train_cv': mcc_mean_train,
-                        'Mean_f05_test_cv': f05_mean,
-                        'Mean_f05_train_cv': f05_mean_train,
                         'Mean_roc_auc_test_cv': roc_mean,
                         'Mean_balanced_accuracy_test_cv': ba_mean,
                         'Mean_precision_test_cv': prec_mean,
@@ -174,7 +139,7 @@ def main():
 
                 run_counter += 1
                 return {'loss': round(penalty_loss, 3), 'status': STATUS_OK}
-            
+
             with mlflow.start_run(run_name = run_name):
                 # Initialize hyper-parameter tuning
                 trials = Trials()
