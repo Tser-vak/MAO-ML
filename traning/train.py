@@ -11,8 +11,9 @@ from sklearn.metrics import (
     matthews_corrcoef, roc_auc_score, balanced_accuracy_score, 
     precision_score, recall_score, confusion_matrix
 )
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+
+import os
+os.environ["PYTHONWARNINGS"] = "ignore"
 
 # Load OPP functions
 from data.data import DataProcessor, DataConv, ModelExporter # Data handeling processes
@@ -147,7 +148,7 @@ def main():
                     fn=objective,
                     space=spaces[model_name],
                     algo=tpe.suggest,
-                    max_evals=30,
+                    max_evals=2,
                     trials=trials,
                     rstate=np.random.default_rng(67)
                 )
