@@ -8,12 +8,12 @@ from hyperopt import fmin, tpe, hp, Trials, STATUS_OK
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.metrics import (
-    matthews_corrcoef, roc_auc_score, balanced_accuracy_score, 
+    matthews_corrcoef, average_precision_score, balanced_accuracy_score, 
     precision_score, recall_score, confusion_matrix
 )
 
-import os
-os.environ["PYTHONWARNINGS"] = "ignore"
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Load OPP functions
 from data.data import DataProcessor, DataConv, ModelExporter # Data handeling processes
@@ -104,7 +104,7 @@ def main():
                 pipeline.set_params(**params)
                  
                 # Cross validation list 
-                score = ['matthews_corrcoef','roc_auc','balanced_accuracy','precision','recall']
+                score = ['matthews_corrcoef','average_precision','balanced_accuracy','precision','recall']
                 
                 # Calculate Cross-validation Scores
                 cv_results = cross_validate(
@@ -115,15 +115,22 @@ def main():
                 # Mean values 
                 mcc_mean = np.mean(cv_results['test_matthews_corrcoef'])
                 mcc_mean_train = np.mean(cv_results['train_matthews_corrcoef'])
-                roc_mean = np.mean(cv_results['test_roc_auc'])
+                pr_mean = np.mean(cv_results['test_average_precision'])
                 ba_mean = np.mean(cv_results['test_balanced_accuracy'])
                 prec_mean = np.mean(cv_results['test_precision'])
                 rec_mean = np.mean(cv_results['test_recall'])
                # ===================================Penalize LOSS Calculation Due to script selecting Good  Mcc_test with ===================================
                 # =================================== Bad train Mcc (Overfitting) ===================================
-                alpha = 0.8 # penalty weight
-                mcc_gap = abs(mcc_mean - mcc_mean_train) # Gap between train and test MCC
-                penalty_loss = -mcc_mean + (alpha * mcc_gap) # Penalized Loss
+                mcc_gap = abs(mcc_mean - mcc_mean_train) 
+
+                # If the gap is larger than 15%, apply a heavy penalty
+                if mcc_gap > 0.15: 
+                    # Use a strong alpha here because we KNOW it's overfitting
+                    penalty_loss = -mcc_mean + (0.8 * mcc_gap) 
+                else:
+                    # If the gap is healthy, judge the model purely on its Test MCC
+                    penalty_loss = -mcc_mean
+                
                 # ============================================================================================================================================
 
                 with mlflow.start_run(run_name=f"Run {run_counter}", nested=True):
@@ -131,7 +138,7 @@ def main():
                     mlflow.log_metrics({
                         'Mean_mcc_test_cv': mcc_mean,
                         'Mean_mcc_train_cv': mcc_mean_train,
-                        'Mean_roc_auc_test_cv': roc_mean,
+                        'Mean_pr_auc_test_cv': pr_mean,
                         'Mean_balanced_accuracy_test_cv': ba_mean,
                         'Mean_precision_test_cv': prec_mean,
                         'Mean_recall_test_cv': rec_mean,
@@ -148,7 +155,7 @@ def main():
                     fn=objective,
                     space=spaces[model_name],
                     algo=tpe.suggest,
-                    max_evals=2,
+                    max_evals=30,
                     trials=trials,
                     rstate=np.random.default_rng(67)
                 )
@@ -186,14 +193,14 @@ def main():
     y_proba = final_pipeline.predict_proba(X_test)[:, 1]
     
     test_mcc = matthews_corrcoef(y_test, y_pred)
-    test_roc = roc_auc_score(y_test, y_proba)
+    test_pr_auc = average_precision_score(y_test, y_proba)
     test_bal_acc = balanced_accuracy_score(y_test, y_pred)
     test_prec = precision_score(y_test, y_pred)
     test_rec = recall_score(y_test, y_pred)
     cm = confusion_matrix(y_test, y_pred)
 
     mlflow.log_metrics({"holdout_mcc": test_mcc,
-                         "holdout_roc_auc": test_roc,
+                         "holdout_pr_auc": test_pr_auc,
                          "holdout_bal_acc": test_bal_acc,
                          "holdout_precision": test_prec,
                          "holdout_recall": test_rec
@@ -203,7 +210,7 @@ def main():
     print("   FINAL HOLDOUT RESULTS ")
     print("="*45)
     print(f"MCC Score:         {test_mcc:.4f}  <-- MAIN METRIC")
-    print(f"ROC-AUC:           {test_roc:.4f}")
+    print(f"PR-AUC:            {test_pr_auc:.4f}")
     print(f"Balanced Accuracy: {test_bal_acc:.4f}")
     print(f"Precision:         {test_prec:.4f}")
     print(f"Recall:            {test_rec:.4f}")
@@ -218,7 +225,7 @@ def main():
     print("Generating visual plots...")
     visualizer = ModelVisualizer(global_best_config['model_name'], global_best_config['use_smote'])
     visualizer.log_confusion_matrix(cm)
-    visualizer.log_roc_curve(y_test, y_proba)
+    visualizer.log_pr_curve(y_test, y_proba)
 
     # ===================================================================== 
     # PHASE 4: ONNX EXPORT 

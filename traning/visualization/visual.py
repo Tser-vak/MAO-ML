@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import mlflow
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import precision_recall_curve, average_precision_score
 
 class ModelVisualizer:
     """Handles the generation and MLflow logging of all model visualizations."""
@@ -36,22 +36,26 @@ class ModelVisualizer:
             os.remove(filename)
         print(f"Logged {filename} to MLflow.")
 
-    def log_roc_curve(self, y_true, y_proba):
-        """Calculates, plots, logs, and cleans up the ROC curve."""
-        fpr, tpr, _ = roc_curve(y_true, y_proba)
-        roc_auc = auc(fpr, tpr)
+    def log_pr_curve(self, y_true, y_proba):
+        """Calculates, plots, logs, and cleans up the Precision-Recall curve."""
+        precision, recall, _ = precision_recall_curve(y_true, y_proba)
+        pr_auc = average_precision_score(y_true, y_proba)
 
         plt.figure(figsize=(8, 6))
-        plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.3f})')
-        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--') # Diagonal guessing line
+        plt.plot(recall, precision, color='darkorange', lw=2, label=f'PR curve (AUC = {pr_auc:.3f})')
+        
+        # Calculate baseline (fraction of positives)
+        baseline = sum(y_true) / len(y_true)
+        plt.plot([0, 1], [baseline, baseline], color='navy', lw=2, linestyle='--', label=f'Baseline ({baseline:.3f})')
+        
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate (Wasted Lab Time)')
-        plt.ylabel('True Positive Rate (Correct Actives)')
-        plt.title(f"ROC Curve: {self.title_suffix}")
+        plt.xlabel('Recall (True Positive Rate)')
+        plt.ylabel('Precision (Positive Predictive Value)')
+        plt.title(f"Precision-Recall Curve: {self.title_suffix}")
         plt.legend(loc="lower right")
         
-        filename = f"roc_curve_{self.file_suffix}.png"
+        filename = f"pr_curve_{self.file_suffix}.png"
         plt.savefig(filename, bbox_inches='tight')
         plt.close()
 

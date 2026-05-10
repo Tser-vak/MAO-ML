@@ -252,7 +252,7 @@ class DataConv:
         DO NOT call .fit_resample() here! The ImbPipeline in train.py 
         must do that internally to prevent data leakage.
         """
-        return BorderlineSMOTE(sampling_strategy=0.6,k_neighbors=18,m_neighbors=15,random_state=67)
+        return BorderlineSMOTE(sampling_strategy=0.3,k_neighbors=18,m_neighbors=15,random_state=67)
 
 class ModelExporter:
     """Handles the preparation and export of models for production."""
