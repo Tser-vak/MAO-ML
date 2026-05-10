@@ -76,6 +76,9 @@ class DataProcessor:
         if len(zero_var_cols) > 0:
             print(f"Dropping {len(zero_var_cols)} features with zero variance.")
             self.data.drop(columns=zero_var_cols, inplace=True)
+            
+        # Add the correlation filter here (0.90 is a standard safe threshold for chemistry)
+        self._remove_highly_correlated_features(threshold=0.90)
         
         return self.data, self.lb_data
 
@@ -161,6 +164,38 @@ class DataProcessor:
         print(f"Shape of Data (After Imputation): {M3} rows x {N3} columns")
         print('-------------------------------------------------')
 
+
+    def _remove_highly_correlated_features(self, threshold=0.90):
+        """
+        Identifies and removes features that are highly correlated with each other.
+        Keeps one feature from the correlated pair and drops the rest.
+        """
+        if self.data.empty:
+            return
+
+        print(f"Checking for highly correlated features (threshold > {threshold})...")
+        
+        # Calculate absolute correlation matrix
+        corr_matrix = self.data.corr().abs()
+        
+        # Select upper triangle of correlation matrix
+        # (This ensures we only drop one of the paired features, not both)
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        
+        # Find features with correlation greater than threshold
+        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+        
+        if len(to_drop) > 0:
+            print(f"Dropping {len(to_drop)} highly correlated features.")
+            print(f"\nRemoved features: {to_drop}\n")
+            self.data.drop(columns=to_drop, inplace=True)
+        else:
+            print("No highly correlated features found above threshold.")
+            
+        M, N = np.shape(self.data)
+        print(f"Shape of Data (After Correlation Filter): {M} rows x {N} columns")
+        print(f"\nKept features: {self.data.columns.tolist()}\n")
+        print('-------------------------------------------------')
 
     def get_split(self, test_size=0.2, random_state=142):
         """
@@ -311,7 +346,7 @@ if __name__ == "__main__":
     # --- Quick sanity-check run ---
     # Replace CSV_PATH with the actual path to your dataset before running.
     pipeline = DataProcessor(
-        file_path=r"CSV_PATH",
+        file_path=r"C:\Users\Max\Desktop\MAO-ML\traning\data\MAOB_PD_Activity_with_descriptors.csv",
         labels="Label",
         ignore_desc=["Molecule ChEMBL ID", "Smiles", "Standard Type", "Standard Relation", "Standard Value", "Standard Units"]
     )

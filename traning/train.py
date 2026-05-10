@@ -120,7 +120,7 @@ def main():
                 rec_mean = np.mean(cv_results['test_recall'])
                # ===================================Penalize LOSS Calculation Due to script selecting Good  Mcc_test with ===================================
                 # =================================== Bad train Mcc (Overfitting) ===================================
-                alpha = 0.3 # penalty weight
+                alpha = 0.8 # penalty weight
                 mcc_gap = abs(mcc_mean - mcc_mean_train) # Gap between train and test MCC
                 penalty_loss = -mcc_mean + (alpha * mcc_gap) # Penalized Loss
                 # ============================================================================================================================================

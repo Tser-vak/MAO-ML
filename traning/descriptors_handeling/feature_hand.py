@@ -1,10 +1,10 @@
 from sklearn.feature_selection import RFE
-from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 class FearuteSelector:
     # Feature selector ,LightGBM finding the most important features
 
-    def __init__(self, number_features=40, use_balanced_weights=False):
+    def __init__(self, number_features=25, use_balanced_weights=False):
         self.number_features = number_features
         
         # If we aren't using SMOTE, LightGBM must balance the weights 
@@ -12,10 +12,14 @@ class FearuteSelector:
 
         class_weight= "balanced" if use_balanced_weights else None
 
-        self.estimator = LGBMClassifier(random_state=42,
-                                        n_jobs=-1,
-                                        verbose=-1,
-                                        class_weight=class_weight)
+        self.estimator = RandomForestClassifier(
+                                                n_estimators=100,
+                                                max_depth=7,
+                                                random_state=67,
+                                                n_jobs=-1,
+                                                verbose=0,
+                                                class_weight=class_weight
+                                                )
 
         self.rfe = RFE(estimator=self.estimator,
                       n_features_to_select=self.number_features,
