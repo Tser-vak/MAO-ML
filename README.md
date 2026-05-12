@@ -5,7 +5,6 @@
 [![XGBoost](https://img.shields.io/badge/XGBoost-Gradient%20Boosting-FF6600?style=flat)](https://xgboost.ai/)
 [![LightGBM](https://img.shields.io/badge/LightGBM-Gradient%20Boosting-02B875?style=flat)](https://lightgbm.readthedocs.io/en/latest/)
 
-[![ReadMe Card](https://github-readme-stats.vercel.app/api/pin/?username=Tser-vak&repo=Chem_ML_Pipeline&theme=default)](https://github.com/Tser-vak/Chem_ML_Pipeline)
 
 #                       🧬 MAO-ML — Imbalanced Chemical Classification Pipeline
 
