@@ -65,7 +65,7 @@ The 6 molecules with the **best (most negative) docking scores** were fed into t
 **The model correctly predicted all 6 as `Active`**, with confidence scores ranging from **0.739 to 0.876**.
 
 | ZINC ID | Predicted | Confidence |
-|---|---|---|
+|---|---|---|---|
 | ZINC00000057657 | ✅ Active | 0.876 | [7,8-Dihydroxyflavone](https://pmc.ncbi.nlm.nih.gov/articles/PMC9881092/) |
 | ZINC000000689683 | ✅ Active | 0.850 | Daphnoretin |
 | ZINC000000119985 | ✅ Active | 0.739 | [Catechin](https://doi.org/10.1007/s13205-024-03934-7) |
