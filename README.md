@@ -5,6 +5,8 @@
 [![XGBoost](https://img.shields.io/badge/XGBoost-Gradient%20Boosting-FF6600?style=flat)](https://xgboost.ai/)
 [![LightGBM](https://img.shields.io/badge/LightGBM-Gradient%20Boosting-02B875?style=flat)](https://lightgbm.readthedocs.io/en/latest/)
 
+[![ReadMe Card](https://github-readme-stats.vercel.app/api/pin/?username=Tser-vak&repo=Chem_ML_Pipeline&theme=default)](https://github.com/Tser-vak/Chem_ML_Pipeline)
+
 #                       🧬 MAO-ML — Imbalanced Chemical Classification Pipeline
 
 An end-to-end Machine Learning pipeline for binary classification of bioactive molecules against Monoamine Oxidase B (MAO-B). Built to handle class imbalance, high-dimensional descriptor noise, and the overfitting traps that come with small chemical datasets.
