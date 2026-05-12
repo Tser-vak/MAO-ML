@@ -1,5 +1,10 @@
 [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-yellow)](https://huggingface.co/spaces/Tser-vak/Mao_B_pred)
 
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat&logo=scikit-learn&logoColor=white)
+![RDKit](https://img.shields.io/badge/RDKit-Cheminformatics-3776AB?style=flat&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-Gradient%20Boosting-FF6600?style=flat)
+![LightGBM](https://img.shields.io/badge/LightGBM-Gradient%20Boosting-02B875?style=flat)
+
 #                       🧬 MAO-ML — Imbalanced Chemical Classification Pipeline
 
 An end-to-end Machine Learning pipeline for binary classification of bioactive molecules against Monoamine Oxidase B (MAO-B). Built to handle class imbalance, high-dimensional descriptor noise, and the overfitting traps that come with small chemical datasets.
