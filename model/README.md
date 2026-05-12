@@ -64,7 +64,7 @@ To validate that the model learned the real chemistry of the MAO-B binding pocke
 The 6 molecules with the **best (most negative) docking scores** were fed into the model. Several of these six compounds are documented in the literature and are actively being researched as potential therapies for Parkinson’s disease.
 **The model correctly predicted all 6 as `Active`**, with confidence scores ranging from **0.739 to 0.876**.
 
-| ZINC ID | Predicted | Confidence |
+| ZINC ID | Predicted | Confidence | Reference |
 |---|---|---|---|
 | ZINC00000057657 | ✅ Active | 0.876 | [7,8-Dihydroxyflavone](https://pmc.ncbi.nlm.nih.gov/articles/PMC9881092/) |
 | ZINC000000689683 | ✅ Active | 0.850 | Daphnoretin |
