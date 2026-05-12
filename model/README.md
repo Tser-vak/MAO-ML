@@ -59,7 +59,7 @@ results['Predicted_Activity'] = np.where(confidence_scores >= 0.6, 'Active', 'No
 
 ## 🔬 Orthogonal Validation — Molecular Docking
 
-To validate that the model learned the real chemistry of the MAO-B binding pocket (and didn't just memorize the training data), the exported ONNX model was tested against an external set of molecules ranked by **3D molecular docking scores** — a completely separate, physics-based method.
+To validate that the model learned the real chemistry of the MAO-B binding pocket (and didn't just memorize the training data), the exported ONNX model was tested against an external set of molecules ranked by **3D molecular docking scores** (AutoDock Vina) — a completely separate, physics-based method.
 
 ### Best Docking Candidates (Top 7)
 
