@@ -9,7 +9,7 @@
 
 An end-to-end Machine Learning pipeline for binary classification of bioactive molecules against Monoamine Oxidase B (MAO-B). Built to handle class imbalance, high-dimensional descriptor noise, and the overfitting traps that come with small chemical datasets.
 
-The Pipiline can be found in the training folder and the model in the model folder (Open source free to use)
+The Pipeline can be found in the training folder and the model in the model folder (Open source free to use)
 
 ---
 
