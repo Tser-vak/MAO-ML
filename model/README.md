@@ -59,20 +59,19 @@ results['Predicted_Activity'] = np.where(confidence_scores >= 0.6, 'Active', 'No
 
 To validate that the model learned the real chemistry of the MAO-B binding pocket (and didn't just memorize the training data), the exported ONNX model was tested against an external set of molecules ranked by **3D molecular docking scores** (AutoDock Vina) — a completely separate, physics-based method.
 
-### Best Docking Candidates (Top 7)
+### Best Docking Candidates (Top 6)
 
-The 7 molecules with the **best (most negative) docking scores** were fed into the model. All 7 are known, actively researched MAO-B inhibitor scaffolds from the literature.
-
-**The model correctly predicted all 7 as `Active`**, with confidence scores ranging from **0.739 to 0.876**.
+The 6 molecules with the **best (most negative) docking scores** were fed into the model. Several of these six compounds are documented in the literature and are actively being researched as potential therapies for Parkinson’s disease.
+**The model correctly predicted all 6 as `Active`**, with confidence scores ranging from **0.739 to 0.876**.
 
 | ZINC ID | Predicted | Confidence |
 |---|---|---|
-| ZINC00000057657 | ✅ Active | 0.876 |
-| ZINC000000689683 | ✅ Active | 0.850 |
-| ZINC000000119985 | ✅ Active | 0.739 |
-| ZINC000000119978 | ✅ Active | 0.739 |
-| ZINC000000338038 | ✅ Active | 0.830 |
-| ZINC000000001785 | ✅ Active | 0.837 |
+| ZINC00000057657 | ✅ Active | 0.876 | [7,8-Dihydroxyflavone](https://pmc.ncbi.nlm.nih.gov/articles/PMC9881092/) |
+| ZINC000000689683 | ✅ Active | 0.850 | Daphnoretin |
+| ZINC000000119985 | ✅ Active | 0.739 | [Catechin](https://doi.org/10.1007/s13205-024-03934-7) |
+| ZINC000000119978 | ✅ Active | 0.739 | [Catechin](https://doi.org/10.1007/s13205-024-03934-7) |
+| ZINC000000338038 | ✅ Active | 0.830 | [Alpinetin](https://onlinelibrary.wiley.com/share/KUNZGIEI6YUUPWRIWXCD?target=10.1002/cns.70676) |
+| ZINC000000001785 | ✅ Active | 0.837 | [Naringenin Hydrate]( https://doi.org/10.1016/j.heliyon.2021.e06684) |
 
 ### Worst Docking Candidates (Negative Control)
 
@@ -88,8 +87,8 @@ The molecules with the **worst docking scores** — poor thermodynamic fit with 
 | ZINC000000119434 | ✅ Not Active | 0.467 |
 | ZINC000001104937 | ✅ Not Active | 0.558 |
 | ZINC000000753040 | ⚠️ Active | 0.707 |
-| ZINC95 | ✅ Not Active | 0.555 |
-| ZINC142 | ✅ Not Active | 0.578 |
+| ZINC95 | ✅ Not Active | 0.555 |Random speciment| 
+| ZINC142 | ✅ Not Active | 0.578 |Random speciment|
 
 ### What This Means
 
