@@ -1,4 +1,4 @@
-# 🧬 High-Throughput Virtual Screening for MAO-B Inhibitors
+# 🧬 Imbalanced Chemical Machine Learning Pipeline.
 
 **An Integrated Master's Thesis Project combining Machine Learning, 2D Molecular Descriptors, and Orthogonal Validation via Molecular Docking.**
 
