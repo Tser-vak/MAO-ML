@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Load OPP functions
 from data.data import DataProcessor, DataConv, ModelExporter # Data handeling processes
 from classifiers.clf import ModelFactory # Budle of Classifier and hyper-parameter tuning 
-from descriptors_handeling.feature_hand import FearuteSelector  # Feature selection (RFE) object
+from descriptors_handeling.feature_hand import FeatureSelector  # Feature selection (RFE) object
 from visualization.visual import ModelVisualizer # Budle of Visualizations tools
 
 def format_params(params):
@@ -32,7 +32,12 @@ def format_params(params):
 def main():
 
     print('Phase 1 Laoding and Cleaning Data\n')
-    file = r'C:\Users\Max\Desktop\MAO-ML\traning\data\MAOB_PD_Activity_with_descriptors.csv'
+    file = r'<Input the Data Path here>' # Replace with your data path  eg. r'C:\<Path>\<Folder>\<Name>.csv'
+    
+    # Configure the DataProcessor:
+    # - ignore_desc: List of metadata or non-numeric columns to drop (string columns will cause execution errors).
+    # - labels: Specify the target prediction column. The processor automatically extracts it as the target 
+    #           variable (y) and removes it from the main feature dataset.
     cleaner = DataProcessor(file_path=file,ignore_desc = ["Molecule ChEMBL ID","Smiles","Standard Type","Standard Relation","Standard Value","Standard Units","Label"],
          labels = "Label")
     # Load and Clean Data (Info data.py)
@@ -46,8 +51,8 @@ def main():
     smote = DataConv.get_smote()
     
     # Initialize feature selection (RFE)
-    rfe_smote = FearuteSelector(number_features=25,use_balanced_weights=False)
-    rfe_no_smote = FearuteSelector(number_features=25,use_balanced_weights=True)
+    rfe_smote = FeatureSelector(number_features=25,use_balanced_weights=False)
+    rfe_no_smote = FeatureSelector(number_features=25,use_balanced_weights=True)
 
     # Initialize Cross Validation
     cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -122,7 +127,6 @@ def main():
                # ===================================Penalize LOSS Calculation Due to script selecting Good  Mcc_test with ===================================
                 # =================================== Bad train Mcc (Overfitting) ===================================
                 mcc_gap = abs(mcc_mean - mcc_mean_train) 
-
                 # If the gap is larger than 15%, apply a heavy penalty
                 if mcc_gap > 0.15: 
                     # Use a strong alpha here because we KNOW it's overfitting

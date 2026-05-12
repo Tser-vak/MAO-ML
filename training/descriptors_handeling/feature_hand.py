@@ -1,14 +1,14 @@
 from sklearn.feature_selection import RFE
 from sklearn.ensemble import RandomForestClassifier
 
-class FearuteSelector:
-    # Feature selector ,LightGBM finding the most important features
+class FeatureSelector:
+    # Feature selector ,RandomForest finding the most important features
 
     def __init__(self, number_features=25, use_balanced_weights=False):
         self.number_features = number_features
         
-        # If we aren't using SMOTE, LightGBM must balance the weights 
-        # internally so it doesn't ignore the minority class during RFE.\
+        # If we aren't using SMOTE, RandomForest must balance the weights 
+        # internally so it doesn't ignore the minority class during RFE.
 
         class_weight= "balanced" if use_balanced_weights else None
 

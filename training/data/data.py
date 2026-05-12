@@ -346,7 +346,7 @@ if __name__ == "__main__":
     # --- Quick sanity-check run ---
     # Replace CSV_PATH with the actual path to your dataset before running.
     pipeline = DataProcessor(
-        file_path=r"C:\Users\Max\Desktop\MAO-ML\traning\data\MAOB_PD_Activity_with_descriptors.csv",
+        file_path=r"<CSV_PATH>",
         labels="Label",
         ignore_desc=["Molecule ChEMBL ID", "Smiles", "Standard Type", "Standard Relation", "Standard Value", "Standard Units"]
     )
