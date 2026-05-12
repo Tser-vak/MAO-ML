@@ -14,9 +14,7 @@ The global winner across all 6 model × strategy combinations was **Random Fores
 | Metric | Score |
 |---|---|
 | **MCC** | **0.420** ← main metric |
-| PR-AUC | 0.986 |
 | Balanced Accuracy | 0.737 |
-| Precision | 0.961 |
 | Recall | 0.937 |
 
 ### Confusion Matrix Breakdown
