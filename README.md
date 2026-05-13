@@ -1,4 +1,4 @@
-#                       🧬 MAO-ML — Imbalanced Chemical Classification Pipeline
+#                       🧬  Chem_ML_Pipeline — Imbalanced Chemical Classification Pipeline
 [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Demo-yellow)](https://huggingface.co/spaces/Tser-vak/Mao_B_pred)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/stable/)
 [![RDKit](https://img.shields.io/badge/RDKit-Cheminformatics-3776AB?style=flat&logoColor=white)](https://www.rdkit.org/)
